@@ -7,6 +7,7 @@ explicit, and every claim carries its evidence.
 
 from __future__ import annotations
 
+from dataclasses import dataclass, field
 from datetime import datetime
 from enum import StrEnum
 
@@ -142,3 +143,23 @@ class TriageVerdict(BaseModel):
     @property
     def is_actionable(self) -> bool:
         return self.severity.rank >= Severity.MALICIOUS.rank
+
+
+@dataclass
+class TriageResult:
+    """A verdict plus the metadata needed to audit how it was reached.
+
+    Lives here rather than in `triage.py` so that anything which only *renders* a
+    result — `report.py`, a ticketing integration, the test suite — does not have
+    to import the orchestration layer, and with it the Agent Framework.
+    """
+
+    verdict: TriageVerdict
+    tool_calls: list[str] = field(default_factory=list)
+    vt_stats: dict[str, int] = field(default_factory=dict)
+    elapsed_seconds: float = 0.0
+    error: str | None = None
+
+    @property
+    def ok(self) -> bool:
+        return self.error is None

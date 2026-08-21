@@ -7,6 +7,6 @@ rewrite.
 """
 
 from soc_triage.config import Settings, load_settings
-from soc_triage.models import Severity, TriageVerdict
+from soc_triage.models import Severity, TriageResult, TriageVerdict
 
-__all__ = ["Settings", "load_settings", "Severity", "TriageVerdict"]
+__all__ = ["Settings", "load_settings", "Severity", "TriageResult", "TriageVerdict"]

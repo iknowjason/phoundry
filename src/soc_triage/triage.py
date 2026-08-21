@@ -7,7 +7,6 @@ decision, and the mapping from a message id to a finished verdict.
 from __future__ import annotations
 
 import asyncio
-from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from typing import Any
 
@@ -15,7 +14,7 @@ from agent_framework import Agent
 
 from soc_triage.agent import build_agent, run_options
 from soc_triage.config import Settings, load_settings
-from soc_triage.models import Severity, TriageVerdict
+from soc_triage.models import Severity, TriageResult, TriageVerdict
 from soc_triage.sublime import SublimeClient
 from soc_triage.tools import TriageContext
 from soc_triage.virustotal import VirusTotalClient
@@ -24,20 +23,9 @@ from soc_triage.virustotal import VirusTotalClient
 ESCALATE_AT = Severity.MALICIOUS
 LOW_CONFIDENCE = 0.65
 
-
-@dataclass
-class TriageResult:
-    """A verdict plus the metadata needed to audit how it was reached."""
-
-    verdict: TriageVerdict
-    tool_calls: list[str] = field(default_factory=list)
-    vt_stats: dict[str, int] = field(default_factory=dict)
-    elapsed_seconds: float = 0.0
-    error: str | None = None
-
-    @property
-    def ok(self) -> bool:
-        return self.error is None
+# Re-exported: TriageResult is defined in models.py but has always been
+# importable from here, and the notebook imports it from here.
+__all__ = ["TriageSession", "TriageResult", "ESCALATE_AT", "LOW_CONFIDENCE"]
 
 
 class TriageSession:

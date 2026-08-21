@@ -2,9 +2,14 @@
 
 from datetime import UTC, datetime
 
-from soc_triage.models import Indicator, IndicatorType, Severity, TriageVerdict
+from soc_triage.models import (
+    Indicator,
+    IndicatorType,
+    Severity,
+    TriageResult,
+    TriageVerdict,
+)
 from soc_triage.report import render_html, render_markdown
-from soc_triage.triage import TriageResult
 
 
 def _verdict(**overrides) -> TriageVerdict:

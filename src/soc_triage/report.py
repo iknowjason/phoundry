@@ -6,8 +6,7 @@ import html
 from datetime import UTC, datetime
 from pathlib import Path
 
-from soc_triage.models import Severity, TriageVerdict
-from soc_triage.triage import TriageResult
+from soc_triage.models import Severity, TriageResult, TriageVerdict
 
 SEVERITY_COLORS = {
     Severity.BENIGN: ("#0b6e3f", "#e7f6ee"),
