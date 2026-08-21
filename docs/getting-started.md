@@ -30,8 +30,8 @@ resources at all.
 ## 1. Clone
 
 ```bash
-git clone https://github.com/iknowjason/foundragent.git
-cd foundragent
+git clone https://github.com/iknowjason/phoundry.git
+cd phoundry
 ```
 
 ## 2. Install

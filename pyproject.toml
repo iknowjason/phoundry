@@ -1,7 +1,7 @@
 [project]
-name = "soc-triage-agent"
+name = "phoundry"
 version = "0.1.0"
-description = "SOC blue-team email triage agent on Microsoft Foundry, driven from a Jupyter notebook"
+description = "Phoundry — SOC blue-team email triage agent on Microsoft Foundry, driven from a Jupyter notebook"
 readme = "README.md"
 requires-python = ">=3.11"
 license = "Apache-2.0"
@@ -70,7 +70,7 @@ asyncio_mode = "auto"
 pythonpath = ["src"]
 
 [project.urls]
-Homepage = "https://github.com/iknowjason/foundragent"
-Repository = "https://github.com/iknowjason/foundragent"
-Documentation = "https://github.com/iknowjason/foundragent/tree/main/docs"
-Issues = "https://github.com/iknowjason/foundragent/issues"
+Homepage = "https://github.com/iknowjason/phoundry"
+Repository = "https://github.com/iknowjason/phoundry"
+Documentation = "https://github.com/iknowjason/phoundry/tree/main/docs"
+Issues = "https://github.com/iknowjason/phoundry/issues"

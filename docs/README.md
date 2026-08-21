@@ -1,6 +1,7 @@
 # Documentation
 
-User documentation for the SOC blue-team email triage agent. Start at
+User documentation for **Phoundry**, a SOC blue-team email triage agent on Microsoft
+Foundry. Start at
 **[Getting started](getting-started.md)** — it takes you from a clone to a triaged
 message in one pass.
 

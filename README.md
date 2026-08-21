@@ -1,9 +1,12 @@
-# SOC Blue-Team Email Triage Agent
+# Phoundry
 
-An analyst-triggered email triage agent built on **Microsoft Foundry**, using the
-**Microsoft Agent Framework**, with **Sublime Security** and **VirusTotal** enrichment.
+*Phishing's `ph`, on Microsoft Foundry.*
 
-[![tests](https://github.com/iknowjason/foundragent/actions/workflows/tests.yml/badge.svg)](https://github.com/iknowjason/foundragent/actions/workflows/tests.yml)
+A SOC blue-team email triage agent built on **Microsoft Foundry**, using the **Microsoft
+Agent Framework**, with **Sublime Security** and **VirusTotal** enrichment. An analyst
+triggers it; it does not run on a timer.
+
+[![tests](https://github.com/iknowjason/phoundry/actions/workflows/tests.yml/badge.svg)](https://github.com/iknowjason/phoundry/actions/workflows/tests.yml)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org/downloads/)
 
@@ -124,7 +127,7 @@ The short version. [docs/getting-started.md](docs/getting-started.md) is the lon
 with prerequisites and the checks that tell you whether each step actually worked.
 
 ```bash
-git clone https://github.com/iknowjason/foundragent.git && cd foundragent
+git clone https://github.com/iknowjason/phoundry.git && cd phoundry
 python -m venv .venv && source .venv/bin/activate
 pip install -e ".[notebook,msticpy]"
 cp .env.example .env          # fill in

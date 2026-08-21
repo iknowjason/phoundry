@@ -5,7 +5,7 @@
 Please **do not open a public issue** for a security problem.
 
 Report privately through GitHub's
-[private vulnerability reporting](https://github.com/iknowjason/foundragent/security/advisories/new)
+[private vulnerability reporting](https://github.com/iknowjason/phoundry/security/advisories/new)
 on this repository. Expect an acknowledgement within a few days.
 
 Include what you can: affected version or commit, reproduction steps, and what an

@@ -28,7 +28,7 @@ honesty about what is proven are held to the same bar as correctness.
 ## Setup
 
 ```bash
-git clone https://github.com/iknowjason/foundragent.git && cd foundragent
+git clone https://github.com/iknowjason/phoundry.git && cd phoundry
 python -m venv .venv && source .venv/bin/activate
 pip install -e ".[notebook,msticpy,dev]"
 pytest
