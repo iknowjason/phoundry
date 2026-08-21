@@ -1,0 +1,45 @@
+# Secrets — never commit
+.env
+*.tfvars
+!*.tfvars.example
+
+# Notebook outputs can contain live phishing content, recipient addresses and IOCs.
+# Strip outputs before committing:  jupyter nbconvert --clear-output --inplace notebooks/*.ipynb
+notebooks/.ipynb_checkpoints/
+.ipynb_checkpoints/
+
+# Triage artifacts (contain real message content)
+reports/*
+!reports/.gitkeep
+.cache/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+
+# Terraform
+infra/.terraform/
+infra/*.tfstate
+infra/*.tfstate.*
+infra/*.tfplan
+infra/.terraform.lock.hcl
+
+# Editors / OS
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# Build + tooling caches
+dist/
+build/
+.mypy_cache/
+.ruff_cache/
+
+# Any other dotenv variant (keep the template)
+.env.*
+!.env.example

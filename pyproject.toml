@@ -1,0 +1,76 @@
+[project]
+name = "soc-triage-agent"
+version = "0.1.0"
+description = "SOC blue-team email triage agent on Microsoft Foundry, driven from a Jupyter notebook"
+readme = "README.md"
+requires-python = ">=3.11"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+authors = [{ name = "Jason Ostrom", email = "jpo@pobox.com" }]
+keywords = [
+    "security",
+    "soc",
+    "blue-team",
+    "email-security",
+    "phishing",
+    "triage",
+    "microsoft-foundry",
+    "agent-framework",
+    "claude",
+    "sublime-security",
+    "virustotal",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Information Technology",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Security",
+    "Framework :: Jupyter",
+]
+dependencies = [
+    # Microsoft Agent Framework 1.x (GA April 2026 — successor to Semantic Kernel + AutoGen)
+    "agent-framework-core>=1.14.0",
+    "agent-framework-foundry>=1.11.0",
+    # Required for Claude models on Foundry (Anthropic Messages endpoint, not Responses).
+    # NOTE: this package is still pre-release — there is no stable build yet, so the
+    # specifier must name a beta explicitly or pip will refuse to resolve it.
+    "agent-framework-anthropic>=1.0.0b260730",
+    "azure-identity>=1.25.0",
+    "httpx>=0.27",
+    "pydantic>=2.9",
+    "python-dotenv>=1.0",
+    "tenacity>=9.0",
+]
+
+[project.optional-dependencies]
+notebook = [
+    "jupyterlab>=4.2",
+    "ipywidgets>=8.1",
+    "pandas>=2.2",
+]
+# MSTICpy is a threat-intel *analysis library*, not an agent framework.
+# It is used here as a tool library inside the agent (IOC extraction + defanging).
+msticpy = ["msticpy>=3.0.2"]
+dev = ["pytest>=8.0", "pytest-asyncio>=0.24"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/soc_triage"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+# Resolve src/ directly, so the suite runs from a fresh clone without an editable
+# install (and so CI does not have to install the pre-release agent-framework deps).
+pythonpath = ["src"]
+
+[project.urls]
+Homepage = "https://github.com/iknowjason/foundragent"
+Repository = "https://github.com/iknowjason/foundragent"
+Documentation = "https://github.com/iknowjason/foundragent/tree/main/docs"
+Issues = "https://github.com/iknowjason/foundragent/issues"

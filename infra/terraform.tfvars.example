@@ -1,0 +1,15 @@
+# Copy to terraform.tfvars and fill in.
+#   az account show --query id -o tsv          → subscription_id
+#   az ad signed-in-user show --query id -o tsv → analyst_principal_ids
+
+subscription_id = "00000000-0000-0000-0000-000000000000"
+location        = "eastus2"
+project_name    = "soctriage"
+
+analyst_principal_ids = [
+  # "11111111-1111-1111-1111-111111111111",
+]
+
+# Set to false for the first apply if the Anthropic Marketplace offer has not
+# been accepted on this subscription yet.
+deploy_claude_models = true
