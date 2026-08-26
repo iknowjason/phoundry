@@ -8,6 +8,7 @@ the prose docs, which lag the spec in places.
 from __future__ import annotations
 
 import base64
+import time
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
@@ -92,6 +93,9 @@ class SublimeClient:
             "offset": offset,
         }
         if message_types:
+            # Bare enum values: inbound | outbound | internal. Note these are NOT
+            # the MQL attribute names (`type.inbound`) used in detection rules —
+            # the API rejects those with a 400.
             params["type"] = message_types
         if states:
             params["states"] = states
@@ -116,35 +120,56 @@ class SublimeClient:
             start=start,
             end=end,
             limit=limit,
-            message_types=["type.inbound"] if inbound_only else None,
+            message_types=["inbound"] if inbound_only else None,
         )
 
-        messages: list[dict[str, Any]] = []
-        for group in result.get("message_groups", []) or []:
-            flagged = [r.get("name") for r in group.get("flagged_rules", []) or []]
-            clicked = group.get("message_links_clicked", []) or []
-            for preview in group.get("messages", []) or []:
-                messages.append(
-                    {
-                        "message_id": preview.get("id"),
-                        "canonical_id": group.get("id"),
-                        "subject": preview.get("subject"),
-                        "sender": (preview.get("sender") or {}).get("email"),
-                        "sender_display_name": (preview.get("sender") or {}).get("display_name"),
-                        "mailbox": (preview.get("mailbox") or {}).get("email_address"),
-                        "created_at": preview.get("created_at"),
-                        "delivered": preview.get("delivered"),
-                        "read_at": preview.get("read_at"),
-                        "group_state": group.get("state"),
-                        "group_classification": group.get("classification"),
-                        "flagged_rules": [name for name in flagged if name],
-                        "group_size": len(group.get("messages", []) or []),
-                        "links_clicked": clicked,
-                        "user_reports": len(group.get("user_reports", []) or []),
-                    }
-                )
-        messages.sort(key=lambda m: m.get("created_at") or "", reverse=True)
-        return messages
+        return _flatten_groups(result)
+
+    # ── identity lookup ──────────────────────────────────────────────────────
+
+    def find_messages(
+        self,
+        identifier: str,
+        *,
+        days: int = 7,
+        poll_interval: float = 2.0,
+        max_polls: int = 30,
+    ) -> list[dict[str, Any]]:
+        """Find messages involving a person, by email address or display name.
+
+        `search_message_groups` filters on a time window only, so an analyst-supplied
+        identifier has to go through a hunt: `POST /v0/hunt-jobs` takes arbitrary MQL.
+        Hunt jobs are asynchronous, so this blocks while polling — bounded by
+        `poll_interval * max_polls` (default 60s).
+
+        Returns the same row shape as `recent_messages()`, so anything that renders
+        one renders the other.
+        """
+        end = datetime.now(UTC)
+        start = end - timedelta(days=max(1, days))
+        mql = build_identity_mql(identifier)
+
+        job_id = self.start_hunt(
+            mql_source=mql,
+            start=start,
+            end=end,
+            name=f"analyst-lookup-{identifier[:40]}",
+        )
+
+        for _ in range(max_polls):
+            time.sleep(poll_interval)
+            status = self.get_hunt_status(job_id)
+            state = str(status.get("state") or status.get("status") or "").lower()
+            if state in {"completed", "complete", "finished", "done"}:
+                return _flatten_groups(self.get_hunt_results(job_id))
+            if state in {"failed", "error"}:
+                raise SublimeError(f"Hunt job {job_id} failed: {status}")
+
+        raise SublimeError(
+            f"Hunt job {job_id} did not finish within "
+            f"{poll_interval * max_polls:.0f}s. Query it later with "
+            f"get_hunt_status({job_id!r}) / get_hunt_results({job_id!r})."
+        )
 
     # ── per-message detail ───────────────────────────────────────────────────
 
@@ -222,7 +247,9 @@ class SublimeClient:
         if flagged_only:
             body["triage_flagged"] = True
         result = self._post_json("/v0/hunt-jobs", json=body)
-        job_id = result.get("id") or result.get("job_id")
+        # The API returns `hunt_job_id`; the other two are accepted defensively
+        # because older responses and the prose docs both use them.
+        job_id = result.get("hunt_job_id") or result.get("id") or result.get("job_id")
         if not job_id:
             raise SublimeError(f"Hunt job did not return an id: {result}")
         return str(job_id)
@@ -248,6 +275,76 @@ class SublimeClient:
         agent unless ALLOW_MAILBOX_ACTIONS is true.
         """
         return self._post_json(f"/v0/messages/{message_id}/actions", json={"action": action})
+
+
+def _mql_literal(value: str) -> str:
+    """Quote a value for use as an MQL string literal.
+
+    The identifier comes from an analyst typing into a notebook cell, so it is
+    untrusted with respect to the query it lands in. Escaping backslashes before
+    quotes keeps a value containing `"` from terminating the literal early.
+    """
+    escaped = value.replace("\\", "\\\\").replace('"', '\\"')
+    return f'"{escaped}"'
+
+
+def build_identity_mql(identifier: str) -> str:
+    """Build the MQL for "show me mail involving this person".
+
+    An identifier containing `@` is treated as an address and matched exactly against
+    sender and recipient addresses. Anything else is treated as a display name and
+    matched case-insensitively as a substring, because analysts type "Jane Doe" when
+    the header carries "Jane Doe (Finance)".
+    """
+    identifier = identifier.strip()
+    if not identifier:
+        raise ValueError("identifier must not be empty")
+
+    lit = _mql_literal(identifier)
+    if "@" in identifier:
+        return (
+            f"sender.email.email == {lit}"
+            f" or any(recipients.to, .email.email == {lit})"
+            f" or any(recipients.cc, .email.email == {lit})"
+        )
+    return (
+        f"strings.icontains(sender.display_name, {lit})"
+        f" or any(recipients.to, strings.icontains(.display_name, {lit}))"
+    )
+
+
+def _flatten_groups(result: dict[str, Any]) -> list[dict[str, Any]]:
+    """Flatten a message-groups payload into one row per message, newest first.
+
+    Both `/v0/message-groups/search` and `/v0/hunt-jobs/{id}/results` return this
+    shape, which is what lets the time-window and identity entry points share it.
+    """
+    messages: list[dict[str, Any]] = []
+    for group in result.get("message_groups") or result.get("results") or []:
+        flagged = [r.get("name") for r in group.get("flagged_rules", []) or []]
+        clicked = group.get("message_links_clicked", []) or []
+        for preview in group.get("messages", []) or []:
+            messages.append(
+                {
+                    "message_id": preview.get("id"),
+                    "canonical_id": group.get("id"),
+                    "subject": preview.get("subject"),
+                    "sender": (preview.get("sender") or {}).get("email"),
+                    "sender_display_name": (preview.get("sender") or {}).get("display_name"),
+                    "mailbox": (preview.get("mailbox") or {}).get("email_address"),
+                    "created_at": preview.get("created_at"),
+                    "delivered": preview.get("delivered"),
+                    "read_at": preview.get("read_at"),
+                    "group_state": group.get("state"),
+                    "group_classification": group.get("classification"),
+                    "flagged_rules": [name for name in flagged if name],
+                    "group_size": len(group.get("messages", []) or []),
+                    "links_clicked": clicked,
+                    "user_reports": len(group.get("user_reports", []) or []),
+                }
+            )
+    messages.sort(key=lambda m: m.get("created_at") or "", reverse=True)
+    return messages
 
 
 def _iso(value: datetime) -> str:

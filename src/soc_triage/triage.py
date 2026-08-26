@@ -78,6 +78,21 @@ class TriageSession:
             limit=limit,
         )
 
+    def find_messages(
+        self,
+        identifier: str,
+        *,
+        days: int = 7,
+    ) -> list[dict[str, Any]]:
+        """Find messages involving a person, by email address or display name.
+
+        The analyst-driven counterpart to `recent_messages()`: instead of "what
+        arrived recently", this answers "what has this person sent or received".
+        Runs as a Sublime hunt, so it blocks for a few seconds while the job
+        completes. Returns the same row shape as `recent_messages()`.
+        """
+        return self.sublime.find_messages(identifier, days=days)
+
     # ── triage ───────────────────────────────────────────────────────────────
 
     async def triage(

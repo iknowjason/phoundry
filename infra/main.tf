@@ -178,18 +178,22 @@ resource "azurerm_application_insights" "insights" {
 ########################################################################
 ## RBAC
 ##
-## Analysts get "Azure AI User" (recently renamed "Foundry User" — the role
-## ID is unchanged) so the notebook can authenticate as the human running it.
+## Analysts get "Foundry User" (formerly "Azure AI User" — the role ID is
+## unchanged) so the notebook can authenticate as the human running it.
 ## That keeps the Foundry audit trail attributable to a person.
+##
+## Pinned by ID rather than looked up by name. The display name has already
+## changed once, and a name lookup makes the provider enumerate every role
+## definition in the subscription before filtering client-side, which is slow.
 ########################################################################
-data "azurerm_role_definition" "ai_user" {
-  name = "Azure AI User"
+locals {
+  foundry_user_role_definition_id = "/subscriptions/${var.subscription_id}/providers/Microsoft.Authorization/roleDefinitions/53ca6127-db72-4b80-b1b0-d745d6d5456d"
 }
 
 resource "azurerm_role_assignment" "analysts" {
   for_each = toset(var.analyst_principal_ids)
 
   scope              = azapi_resource.foundry.id
-  role_definition_id = data.azurerm_role_definition.ai_user.role_definition_id
+  role_definition_id = local.foundry_user_role_definition_id
   principal_id       = each.value
 }
