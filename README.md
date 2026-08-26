@@ -101,6 +101,11 @@ pins a beta explicitly. Microsoft Learn's Python example also still shows
 Group context comes along with each message, which is where the campaign signal lives:
 flagged rules, how many mailboxes were hit, and recorded link clicks.
 
+For analyst-initiated review there is a second entry point: `find_messages()` takes an
+email address or a display name, generates MQL, and runs it as a hunt (`POST /v0/hunt-jobs`)
+— because the search endpoint filters on time only. Both entry points return the same row
+shape, so the triage path downstream is identical.
+
 Sublime also supports **webhook Actions** on `message.flagged`, which would be the
 better trigger for continuous monitoring. The analysis path is in the package rather
 than the notebook precisely so that swap doesn't require a rewrite.

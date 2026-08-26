@@ -49,6 +49,31 @@ size and user reports.
 the monitoring use case and a poor default for a demo tenant. Set `LOOKBACK_MINUTES =
 1440` and re-run the cell.
 
+### 2b · Look up a specific person
+
+```python
+IDENTIFIER = 'alice@corp.com'   # or a display name: 'Jane Doe'
+LOOKBACK_DAYS = 7
+```
+
+The analyst-driven entry point. `GET /v0/message-groups/search` filters on `created_at`
+only, so an identifier has to go through a hunt — the cell generates MQL and posts it to
+`POST /v0/hunt-jobs`, then polls until the job completes.
+
+- An identifier containing `@` is matched **exactly** against `sender.email.email`,
+  `recipients.to` and `recipients.cc`.
+- Anything else is treated as a display name and matched as a **case-insensitive
+  substring** against `sender.display_name` and recipient display names, because analysts
+  type `Jane Doe` when the header carries `Jane Doe (Finance)`.
+
+The generated MQL is printed above the results — read it before trusting what comes back.
+Results land in `messages`, so section 3 triages them with no change. Leave `IDENTIFIER`
+empty to skip the cell and keep the section 2 results.
+
+Hunts are asynchronous and this call blocks, bounded at 60s by default. If a hunt is still
+running when that elapses, the raised error carries the job id so you can collect it later
+with `session.sublime.get_hunt_results(job_id)`.
+
 ### 3 · Triage
 
 ```python
